@@ -27,7 +27,7 @@ class TemplateRegistry
     /**
      * Получить шаблон по коду
      * @param string $templateCode
-     * @return Template
+     * @return BaseTemplate
      * @throws NotificationSystemException
      */
     public function getTemplateByCode($templateCode)
@@ -48,7 +48,7 @@ class TemplateRegistry
     /**
      * Возвращает полное имя класса по идентификатору
      * @param int $code
-     * @return Template
+     * @return BaseTemplate
      * @throws NotificationSystemException
      */
     public function getTemplateClassByCode($code)

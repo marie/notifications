@@ -2,12 +2,12 @@
 
 namespace NotificationSystem\Templates;
 
+use NotificationSystem\Message;
 use NotificationSystem\Notification;
 use NotificationSystem\NotificationSystemException;
-use NotificationSystem\Template;
 use NotificationSystem\Transport;
 
-abstract class BaseTemplate implements Template
+abstract class BaseTemplate
 {
     /**
      * @var string
@@ -35,6 +35,13 @@ abstract class BaseTemplate implements Template
      */
     protected static $subject = [];
 
+    /**
+     * Содержание файла шаблона
+     * @param Notification $notification
+     * @return Message
+     */
+    abstract public function render(Notification $notification);
+
     public function getAllAvailableTransports()
     {
         return static::$supportedTransports;
@@ -45,7 +52,7 @@ abstract class BaseTemplate implements Template
      * @param Transport $transport
      * @return bool
      */
-    public static function isAvailableForTransport(Transport $transport)
+    public function isSupportedByTransport(Transport $transport)
     {
         return in_array(get_class($transport), static::$supportedTransports);
     }
@@ -67,7 +74,7 @@ abstract class BaseTemplate implements Template
      */
     public function checkTransport(Transport $transport)
     {
-        if (!static::isAvailableForTransport($transport)) {
+        if (!static::isSupportedByTransport($transport)) {
             throw new NotificationSystemException('Шаблон (Template) и транспорт (Transport) несовместимы.');
         }
     }
@@ -89,7 +96,7 @@ abstract class BaseTemplate implements Template
      * @return bool
      * @throws NotificationSystemException
      */
-    public static function isAvailableForNotificationByName($notificationName)
+    public function isAvailableForNotificationByName($notificationName)
     {
         return $notificationName == static::$supportedNotification;
     }
@@ -99,19 +106,10 @@ abstract class BaseTemplate implements Template
      * @param Notification $notification
      * @throws NotificationSystemException
      */
-    public function checkNotification(Notification $notification)
+    public function isSupportedByNotification(Notification $notification)
     {
-        if (!in_array($notification->language, static::$supportedLanguages)) {
-            throw new NotificationSystemException(
-                sprintf('Язык уведомления не задан или не поддерживается шаблоном [%s].', static::class)
-            );
-        }
-
-        if (!static::isAvailableForNotification($notification)) {
-            $templateName = get_class($this);
-            $notificationName = get_class($notification);
-            throw new NotificationSystemException("Шаблон [$templateName] и уведомление [$notificationName] несовместимы.");
-        }
+        return in_array($notification->language, static::$supportedLanguages) &&
+            static::isAvailableForNotification($notification);
     }
 
     /**

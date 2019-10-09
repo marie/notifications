@@ -4,6 +4,7 @@ namespace NotificationSystem\Transports;
 
 use NotificationSystem\NotificationSystemException;
 use NotificationSystem\Message;
+use NotificationSystem\Recipient;
 use NotificationSystem\Transport;
 
 class EmailTransport implements Transport
@@ -88,18 +89,19 @@ class EmailTransport implements Transport
     }
 
     /**
-     * @param Profile $profile
+     * @param Recipient $recipient
      * @return void
+     * @throws NotificationSystemException
      */
-    public function setAddressFromProfile(Profile $profile)
+    public function setAddressFromRecipient(Recipient $recipient)
     {
-        $address = trim($profile->profileEmails()->getPriorityEmailAddress());
+        $email = $recipient->getEmail();
 
-        if (empty($address)) {
-            $address = trim($profile->email);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new NotificationSystemException('Email is not valid');
         }
 
-        $this->address = $address;
+        $this->address = $email;
     }
 
     /**

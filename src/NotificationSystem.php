@@ -2,7 +2,6 @@
 
 namespace NotificationSystem;
 
-use Profile;
 use NotificationSystem\Repositories\SubscriptionCancelRepository;
 use NotificationSystem\Repositories\SubscriptionRepository;
 use Sentry;
@@ -50,13 +49,13 @@ class NotificationSystem
     /**
      * Отправить сообщения по всем подпискам на уведомление
      *
-     * @param Profile $profile
+     * @param Recipient $recipient
      * @param Notification $notification
      */
-    public function sendNotification(Profile $profile, Notification $notification)
+    public function sendNotification(Recipient $recipient, Notification $notification)
     {
         try {
-            $this->sendNotificationOrFail($profile, $notification);
+            $this->sendNotificationOrFail($recipient, $notification);
         }
         catch (NotificationSystemException $e) {
             Sentry::captureException($e);
@@ -66,23 +65,23 @@ class NotificationSystem
     /**
      * Отправить сообщения по всем подпискам на уведомление
      *
-     * @param Profile $profile
+     * @param Recipient $recipient
      * @param Notification $notification
      * @throws NotificationSystemException
      */
-    public function sendNotificationOrFail(Profile $profile, Notification $notification)
+    public function sendNotificationOrFail(Recipient $recipient, Notification $notification)
     {
         $this->debug(sprintf('[DEBUG] Запрошена отправка уведомления (уведомление - %s, профайл - %s)',
             get_class($notification),
-            $profile->id
+            $recipient->getId()
         ));
 
-        $activeSubscriptions = $this->getActiveSubscriptionsForProfile($profile, $notification);
+        $activeSubscriptions = $this->getActiveSubscriptionsForRecipient($recipient, $notification);
 
         if (!$activeSubscriptions) {
             $this->debug(sprintf('[DEBUG] У профайла нет активных подписок (уведомление - %s, профайл - %s)',
                 get_class($notification),
-                $profile->id
+                $recipient->getId()
             ));
         }
 
@@ -90,7 +89,7 @@ class NotificationSystem
 
         foreach ($activeSubscriptions as $subscription) {
             try {
-                $this->sendNotificationForSubscription($profile, $notification, $subscription);
+                $this->sendNotificationForSubscription($recipient, $notification, $subscription);
             }
             catch (Exception $e) {
                 $fails[] = $e->getMessage();
@@ -104,20 +103,20 @@ class NotificationSystem
 
     /**
      * Метод отправляет сообщение по одной подписке
-     * @param Profile $profile
+     * @param Recipient $recipient
      * @param Subscription $subscription
      * @param Notification $notification
      * @throws NotificationSystemException
      */
     public function sendNotificationForSubscription(
-        Profile $profile,
+        Recipient $recipient,
         Notification $notification,
         Subscription $subscription
     ) {
         $this->debug(sprintf('[DEBUG] Обрабатывается подписка %s (уведомление - %s, профайл - %s)',
             get_class($subscription),
             get_class($notification),
-            $profile->id
+            $recipient->getId()
         ));
 
         // 1. Получаем шаблон и транспорт для подписки
@@ -126,9 +125,13 @@ class NotificationSystem
         $transport = $this->transportRegistry->getTransportByCode($subscription->transportCode);
 
         // 2. Проверяем совместимость транспорта, шаблона и уведомления
-        $template->checkNotification($notification);
+        if (!$template->isSupportedByNotification($notification)) {
+            throw new NotificationSystemException('Шаблон (Template) и транспорт (Transport) несовместимы.');
+        }
 
-        $template->checkTransport($transport);
+        if(!$template->isSupportedByTransport($transport)) {
+            throw new NotificationSystemException('Шаблон (Template) и транспорт (Transport) несовместимы.');
+        }
 
         // 3. Генерируем сообщение по шаблону
         $message = $template->render($notification);
@@ -141,17 +144,17 @@ class NotificationSystem
                 $transport->getAddress(),
                 get_class($subscription),
                 get_class($notification),
-                $profile->id,
+                $recipient->getId(),
                 $subscription->id
             ));
         } else {
-            $transport->setAddressFromProfile($profile);
+            $transport->setAddressFromRecipient($recipient);
 
             $this->debug(sprintf('[DEBUG] Адрес установлен из профайла "%s" (подписка - %s, уведомление - %s, профайл - %s, id подписки - %d)',
                 $transport->getAddress(),
                 get_class($subscription),
                 get_class($notification),
-                $profile->id,
+                $recipient->getId(),
                 $subscription->id
             ));
         }
@@ -166,7 +169,7 @@ class NotificationSystem
             $transport->getAddress(),
             get_class($subscription),
             get_class($notification),
-            $profile->id
+            $recipient->getId()
         ));
     }
 
@@ -177,16 +180,16 @@ class NotificationSystem
 
     /**
      * Получить все подписки профиля, кроме отменённых
-     * @param $profile
-     * @param $notification
+     * @param Recipient  $recipient
+     * @param Notification $notification
      * @return array
      */
-    public function getActiveSubscriptionsForProfile($profile, $notification)
+    public function getActiveSubscriptionsForRecipient($recipient, $notification)
     {
         $ownersList = [
-            SubscriptionLevels::PROFILE => $profile->id,
-            SubscriptionLevels::GROUP   => $profile->employeeGroupId,
-            SubscriptionLevels::CLIENT  => $profile->parentId,
+            SubscriptionLevels::PROFILE => $recipient->getId(),
+            SubscriptionLevels::GROUP   => $recipient->getGroupId(),
+            SubscriptionLevels::CLIENT  => $recipient->getClientId(),
             SubscriptionLevels::BASE    => 0
         ];
 
@@ -198,7 +201,7 @@ class NotificationSystem
     }
 
     /**
-     * Возвращает все доступные для данного Profile подписки
+     * Возвращает все доступные для данного Receiver подписки
      * @param Notification $notification
      * @param array $ownersList
      * @return array
@@ -237,6 +240,7 @@ class NotificationSystem
 
     /**
      * Возвращает код уведомления по объекту класса
+     *
      * @param $notification
      * @return int
      */
@@ -246,7 +250,8 @@ class NotificationSystem
     }
 
     /**
-     * Метод получает на вход массив подписок и их отмен, и возвращает отфильтрованный массив только активных подписок
+     * Returns filtered list of subscriptions from all levels
+     * 
      * @param Subscription[] $subscriptions
      * @param SubscriptionCancel[] $subscriptionsCancel
      * @return Subscription[]

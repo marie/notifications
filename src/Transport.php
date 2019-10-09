@@ -27,11 +27,11 @@ interface Transport
     public function setAddress($address);
 
     /**
-     * Записывает нужную контактную информацию из Profile
-     * @param Profile $profile
+     * Записывает нужную контактную информацию из Recipient
+     * @param Recipient $recipient
      * @return void
      */
-    public function setAddressFromProfile(Profile $profile);
+    public function setAddressFromRecipient(Recipient $recipient);
 
     /**
      * @return mixed
