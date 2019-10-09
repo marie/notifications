@@ -1,0 +1,19 @@
+{
+    "name": "marie/notifications",
+    "description": "The system of notifications that allows to subscribe on the notifications that are willing to be received and to unsubscribe from the other ones.",
+    "type": "project",
+    "require": {
+        "phpunit/phpunit": "^8.4"
+    },
+    "authors": [
+        {
+            "name": "marie",
+            "email": "15118505+marie@users.noreply.github.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "NotificationSystem\\": "src/"
+        }
+    }
+}
