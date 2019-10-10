@@ -51,7 +51,7 @@ class TransportRegistry
     public function getTransportClassByCode($code)
     {
         if (!isset($this->codesMap[$code])) {
-            throw new NotificationSystemException(sprintf('Транспорт с кодом [%d] не зарегистрирован.', $code));
+            throw new NotificationSystemException(sprintf('Transport with code [%d] is not registered.', $code));
         }
 
         return $this->codesMap[$code];
@@ -90,7 +90,7 @@ class TransportRegistry
     public function registerTransport($code, $transport, $description)
     {
         if (!class_exists($transport, true) || !is_subclass_of($transport, Transport::class)) {
-            throw new NotificationSystemException('Класс не является транспортом или не существует.');
+            throw new NotificationSystemException('Class is not a transport or does not exist');
         }
 
         $this->codesMap[$code] = $transport;
