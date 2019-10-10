@@ -5,7 +5,6 @@ namespace NotificationSystem;
 use NotificationSystem\Repositories\SubscriptionCancelRepository;
 use NotificationSystem\Repositories\SubscriptionRepository;
 use Sentry;
-use Symfony\Component\Config\Definition\Exception\Exception;
 
 /**
  * Class NotificationSystem
@@ -71,7 +70,7 @@ class NotificationSystem
      */
     public function sendNotificationOrFail(Recipient $recipient, Notification $notification)
     {
-        $this->debug(sprintf('[DEBUG] Запрошена отправка уведомления (уведомление - %s, профайл - %s)',
+        $this->log(sprintf('[INFO] Запрошена отправка уведомления (уведомление - %s, профайл - %s)',
             get_class($notification),
             $recipient->getId()
         ));
@@ -79,7 +78,7 @@ class NotificationSystem
         $activeSubscriptions = $this->getActiveSubscriptionsForRecipient($recipient, $notification);
 
         if (!$activeSubscriptions) {
-            $this->debug(sprintf('[DEBUG] У профайла нет активных подписок (уведомление - %s, профайл - %s)',
+            $this->log(sprintf('[INFO] У профайла нет активных подписок (уведомление - %s, профайл - %s)',
                 get_class($notification),
                 $recipient->getId()
             ));
@@ -91,7 +90,7 @@ class NotificationSystem
             try {
                 $this->sendNotificationForSubscription($recipient, $notification, $subscription);
             }
-            catch (Exception $e) {
+            catch (\Exception $e) {
                 $fails[] = $e->getMessage();
             }
         }
@@ -113,7 +112,7 @@ class NotificationSystem
         Notification $notification,
         Subscription $subscription
     ) {
-        $this->debug(sprintf('[DEBUG] Обрабатывается подписка %s (уведомление - %s, профайл - %s)',
+        $this->log(sprintf('[INFO] Обрабатывается подписка %s (уведомление - %s, профайл - %s)',
             get_class($subscription),
             get_class($notification),
             $recipient->getId()
@@ -140,7 +139,7 @@ class NotificationSystem
         if (!empty($subscription->address)) {
             $transport->setAddress($subscription->address);
 
-            $this->debug(sprintf('[DEBUG] Адрес установлен из подписки "%s" (подписка - %s, уведомление - %s, профайл - %s, id подписки - %d)',
+            $this->log(sprintf('[INFO] Адрес установлен из подписки "%s" (подписка - %s, уведомление - %s, профайл - %s, id подписки - %d)',
                 $transport->getAddress(),
                 get_class($subscription),
                 get_class($notification),
@@ -150,7 +149,7 @@ class NotificationSystem
         } else {
             $transport->setAddressFromRecipient($recipient);
 
-            $this->debug(sprintf('[DEBUG] Адрес установлен из профайла "%s" (подписка - %s, уведомление - %s, профайл - %s, id подписки - %d)',
+            $this->log(sprintf('[INFO] Адрес установлен из профайла "%s" (подписка - %s, уведомление - %s, профайл - %s, id подписки - %d)',
                 $transport->getAddress(),
                 get_class($subscription),
                 get_class($notification),
@@ -162,10 +161,10 @@ class NotificationSystem
         try {
             $transport->send($message);
         } catch (NotificationSystemException $e) {
-            \lc::log('notification_system', $e->getMessage());
+            $this->log($e->getMessage());
         }
 
-        $this->debug(sprintf('[DEBUG] Отправка сообщения (подписка - %s, уведомление - %s, профайл - %s)',
+        $this->log(sprintf('[INFO] Отправка сообщения (подписка - %s, уведомление - %s, профайл - %s)',
             $transport->getAddress(),
             get_class($subscription),
             get_class($notification),
@@ -173,7 +172,7 @@ class NotificationSystem
         ));
     }
 
-    private function debug($message)
+    private function log($message)
     {
         // log
     }
