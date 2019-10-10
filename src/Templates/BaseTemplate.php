@@ -75,7 +75,7 @@ abstract class BaseTemplate
     public function checkTransport(Transport $transport)
     {
         if (!static::isSupportedByTransport($transport)) {
-            throw new NotificationSystemException('Шаблон (Template) и транспорт (Transport) несовместимы.');
+            throw new NotificationSystemException('The Template and The Transport can not be used together.');
         }
     }
 
@@ -122,7 +122,7 @@ abstract class BaseTemplate
     protected function renderTemplateFile($file, Notification $notification)
     {
         if (!is_readable($file)) {
-            throw new NotificationSystemException(sprintf('Файл [%s] не существует или не доступен для чтения.', $file));
+            throw new NotificationSystemException(sprintf('The File [%s] does not exist or can not be read.', $file));
         }
 
         ob_start();
