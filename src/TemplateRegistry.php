@@ -35,7 +35,7 @@ class TemplateRegistry
         $templateClass = $this->getTemplateClassByCode($templateCode);
 
         if (!array_key_exists($templateClass, $this->registry)) {
-            throw new NotificationSystemException('Шаблона не существует.');
+            throw new NotificationSystemException("The template [$templateClass] doesn't exist.");
         }
 
         if (!array_key_exists($templateClass, $this->objectsCache)) {
@@ -54,7 +54,7 @@ class TemplateRegistry
     public function getTemplateClassByCode($code)
     {
         if (!isset($this->codesMap[$code])) {
-            throw new NotificationSystemException(sprintf('Шаблон с кодом [%d] не зарегистрирован.', $code));
+            throw new NotificationSystemException(sprintf('Template with code [%d] is not registered.', $code));
         }
 
         return $this->codesMap[$code];
