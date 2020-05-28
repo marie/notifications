@@ -121,7 +121,7 @@ class NotificationSystem
         // 1. Получаем шаблон и транспорт для подписки
         $template = $this->templatesRegistry->getTemplateByCode($subscription->templateCode);
 
-        $transport = $this->transportRegistry->getTransportByCode($subscription->transportCode);
+        $transport = $this->transportRegistry->makeTransportByCode($subscription->transportCode);
 
         // 2. Проверяем совместимость транспорта, шаблона и уведомления
         if (!$template->isSupportedByNotification($notification)) {

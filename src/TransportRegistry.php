@@ -21,25 +21,19 @@ class TransportRegistry
     protected $codesMap = [];
 
     /**
-     * @var array
-     */
-    protected $objectsCache = [];
-
-    /**
      * Возвращает транспорт из кэша по числовому идентификатору (если его там нет, то создает, добавляет в кэш и возвращает)
      * @param string $transportCode
      * @return Transport
      * @throws NotificationSystemException
      */
-    public function getTransportByCode($transportCode)
+    public function makeTransportByCode($transportCode)
     {
         $transportClass = $this->getTransportClassByCode($transportCode);
 
-        if (!array_key_exists($transportClass, $this->objectsCache)) {
-            $this->objectsCache[$transportClass] = new $transportClass;
+        switch ($transportClass) {
+            case EmailTransport::class: return new EmailTransport(new MailSender());
+            default: throw new NotificationSystemException('Thansport is not supported.');
         }
-
-        return $this->objectsCache[$transportClass];
     }
 
     /**

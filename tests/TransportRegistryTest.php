@@ -2,6 +2,7 @@
 
 namespace NotificationSystem;
 
+use NotificationSystem\Transports\EmailTransport;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,20 +21,15 @@ class TransportRegistryTest extends TestCase
     {
         // Arrange
         $transportRegistry = $this->makeEmptyTransportRegistry();
-
-        $transport = $this->prophesize(Transport::class)->reveal();
-
-        $transportName = get_class($transport);
-
         $transportRegistry->registerTransport(
-            100, $transportName, 'Transport'
+            100, EmailTransport::class, 'Transport'
         );
 
         // Act
-        $result = $transportRegistry->getTransportByCode(100);
+        $result = $transportRegistry->makeTransportByCode(100);
 
         // Assert
-        $this->assertInstanceOf($transportName, $result);
+        $this->assertInstanceOf(EmailTransport::class, $result);
     }
 
     public function testGetTransport_TransportNotExists_returnNull()
@@ -47,6 +43,6 @@ class TransportRegistryTest extends TestCase
         $transportRegistry = $this->makeEmptyTransportRegistry();
 
         // Act
-        $transportRegistry->getTransportByCode(100);
+        $transportRegistry->makeTransportByCode(100);
     }
 }

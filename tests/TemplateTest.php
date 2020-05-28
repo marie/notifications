@@ -17,7 +17,7 @@ class TemplateTest extends TestCase
         $template = new FakeTemplate();
 
         // Assert
-        $this->assertTrue($template::isSupportedByTransport(new FakeTransport()));
+        $this->assertTrue($template::isSupportedByTransport(new FakeTransport(new MailSender())));
     }
 
     public function testIsAvailableForTransport_transportNotExists_returnsFalse()
@@ -25,7 +25,7 @@ class TemplateTest extends TestCase
         $template = new FakeTemplate();
 
         // Assert
-        $this->assertFalse($template->isSupportedByTransport(new FakeAnotherTransport()));
+        $this->assertFalse($template->isSupportedByTransport(new FakeAnotherTransport(new MailSender())));
     }
 
     public function test_sendNotificationForSubscription_templateIsIncompatible_throwsException()
@@ -37,7 +37,7 @@ class TemplateTest extends TestCase
 
         $template = new FakeTemplate();
 
-        $template->checkTransport(new FakeAnotherTransport());
+        $template->checkTransport(new FakeAnotherTransport(new MailSender()));
     }
 
     public function test_isAvailableForNotification_notificationIsCorrect_returnsTrue()

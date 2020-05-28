@@ -2,6 +2,7 @@
 
 namespace NotificationSystem\Transports;
 
+use NotificationSystem\MailSender;
 use NotificationSystem\NotificationSystemException;
 use NotificationSystem\Message;
 use NotificationSystem\Recipient;
@@ -16,9 +17,9 @@ class EmailTransport implements Transport
     protected $address;
 
     /**
-     * @var MimeMessage
+     * @var MailSender
      */
-    protected $mimeMessage;
+    protected $mailSender;
 
     /**
      * @var string
@@ -29,6 +30,11 @@ class EmailTransport implements Transport
      * @var string
      */
     private $emailFrom = 'no-reply@site';
+
+    public function __construct(MailSender $mailSender)
+    {
+        $this->mailSender = $mailSender;
+    }
 
     /**
      * Подготовалиывает сообщение для отправки и отправляет его
@@ -45,13 +51,11 @@ class EmailTransport implements Transport
         // получаем тело сообщения
         $body = $message->getBody();
 
-        $this->mimeMessage = new MimeMessage();
+        $this->mailSender->setFrom($this->nameFrom, $this->emailFrom);
+        $this->mailSender->setTo($this->address);
 
-        $this->mimeMessage->setFrom($this->nameFrom, $this->emailFrom);
-        $this->mimeMessage->setTo($this->address);
-
-        $this->mimeMessage->setContentType('html');
-        $this->mimeMessage->setSubject($message->getTitle());
+        $this->mailSender->setContentType('html');
+        $this->mailSender->setSubject($message->getTitle());
 
         // находим все картинки внутри сообщения <img src="">
         $relatedFiles = $this->findRelatedImages($body);
@@ -64,9 +68,9 @@ class EmailTransport implements Transport
         $this->addAttachments($attachedFiles);
 
         // тело сообщения добавляем к отправляемому сообщению
-        $this->mimeMessage->setContent($body);
+        $this->mailSender->setContent($body);
 
-        $this->mimeMessage->send();
+        $this->mailSender->send();
     }
 
     /**
@@ -134,7 +138,7 @@ class EmailTransport implements Transport
     {
         array_walk($relatedFiles, function ($relatedFile) use (&$body) {
             $body = str_replace($relatedFile, 'cid:' . sha1($relatedFile), $body);
-            $this->mimeMessage->addRelateFile($relatedFile, sha1($relatedFile));
+            $this->mailSender->addRelateFile($relatedFile, sha1($relatedFile));
         });
 
         return $body;
@@ -147,7 +151,7 @@ class EmailTransport implements Transport
     {
         array_walk($attachedFiles, function ($attachment) {
             if (file_exists($attachment['path'])) {
-                $this->mimeMessage->addAttachmentFile($attachment['path'], $attachment['name'] . '.' . $attachment['type']);
+                $this->mailSender->addAttachmentFile($attachment['path'], $attachment['name'] . '.' . $attachment['type']);
             }
             else {
                 throw new NotificationSystemException("Файл '{$attachment['path']}', прикрепляемый к сообщению, не существует");

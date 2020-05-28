@@ -41,7 +41,7 @@ class NotificationSystemTest extends TestCase
 
         // 4. Transport registry's stub
         $transportRegistry = $this->prophesize(TransportRegistry::class);
-        $transportRegistry->getTransportByCode(Argument::type('integer'))->willReturn($transport);
+        $transportRegistry->makeTransportByCode(Argument::type('integer'))->willReturn($transport);
 
         $notificationSystem = new FakeNotificationSystem(
             $subscriptionRepository->reveal(),
